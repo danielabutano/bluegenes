@@ -185,8 +185,7 @@
     {:dispatch-n [
                   [::clear-checked]
                   [:add-toast
-                   [:div.alert.alert-success "Created new list: " (:listName response)]
-                   {:sticky? true}]
+                   [:div.alert.alert-success "Created new list: " (:listName response)]]
                   [::fetch-one-list trail response parent-id]]}))
 
 (reg-event-fx

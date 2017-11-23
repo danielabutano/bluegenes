@@ -31,7 +31,8 @@
 ; @(subscribe) is too stateful. Revisit.
 (reg-event-fx
   ::login-success
-  (fn [{db :db} [_ {token :token :as identity}]]
+  (fn [{db :db} [_ {token :token username :username :as identity}]]
+    (js/console.log "identity" identity)
     {:db (-> db
              (update :auth assoc
                      :thinking? false
@@ -40,17 +41,20 @@
                      :error? false)
              (assoc-in [:mines (:id @(subscribe [:current-mine])) :service :token] token))
      :dispatch-n [[:assets/fetch-lists]
+                  [:add-toast
+                   [:div.alert.alert-success "Logged in successfully as " username]]
                   [:bluegenes.events.mymine/fetch-tree]]}))
 
-(reg-event-db
+(reg-event-fx
   ::login-failure
-  (fn [db [_ {:keys [statusCode]}]]
+  (fn [{db :db} [_ {:keys [statusCode]}]]
     (let [msg (get error-messages statusCode "Error")]
-      (update db :auth assoc
-              :thinking? false
-              :identity nil
-              :error? true
-              :message msg))))
+      {:db (update db :auth assoc
+                   :thinking? false
+                   :identity nil
+                   :error? true
+                   :message msg)
+       :dispatch [:add-toast [:div.alert.alert-warning "Incorrect username or password"]]})))
 
 (reg-event-fx
   ::logout-success

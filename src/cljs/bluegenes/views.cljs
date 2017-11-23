@@ -83,5 +83,5 @@
        [:main [show-panel @active-panel]]
        [footer]
        [alerts/invalid-token-alert]
-       ;[toast/main]
+       [toast/main]
        ])))
