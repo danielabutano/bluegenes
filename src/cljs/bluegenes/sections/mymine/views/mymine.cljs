@@ -633,7 +633,7 @@
                             (dispatch [:lists/view-results (assoc dets :source @source)]))}
             name (when-not authorized
                    [:svg.icon.icon-lock [:use {:xlinkHref "#icon-lock"}]])]]]
-         [:td  [tag-container @hierarchy-trail]]
+         [:td [tag-container @hierarchy-trail]]
          [:td type]
          [:td size]
          [:td #_(tf/unparse built-in-formatter (c/from-long timestamp))]]))))
@@ -707,7 +707,7 @@
            (when @show-selected-pane?
              [:div.top.shrink
               (into [:div [:h3 "Selected items with other tags"]] (map-indexed (fn [idx x]
-                                                                 ^{:key (str "selected" (or (:entry-id x) (str (:im-obj-type x) (:im-obj-id x))))} [row (assoc x :index idx)]) @selected-items-not-in-view))])
+                                                                                 ^{:key (str "selected" (or (:entry-id x) (str (:im-obj-type x) (:im-obj-id x))))} [row (assoc x :index idx)]) @selected-items-not-in-view))])
            [:div.bottom
             [breadcrumb @cursor-trail]
             (let [just-files (not-empty (filter (comp (partial not= "tag") :im-obj-type) @cursor-items))]

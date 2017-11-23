@@ -142,7 +142,7 @@
 (reg-sub
   :toasts
   (fn [db]
-    (get-in db [:toasts])))
+    (not-empty (reverse (sort-by (comp :timestamp second) (get-in db [:toasts]))))))
 
 (reg-sub
   :current-mine

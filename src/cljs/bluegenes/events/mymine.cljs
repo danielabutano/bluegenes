@@ -184,6 +184,9 @@
   (fn [{db :db} [_ trail parent-id response]]
     {:dispatch-n [
                   [::clear-checked]
+                  [:add-toast
+                   [:div.alert.alert-success "Created new list: " (:listName response)]
+                   {:sticky? true}]
                   [::fetch-one-list trail response parent-id]]}))
 
 (reg-event-fx
@@ -612,7 +615,7 @@
               (fn [{db :db} [_ tag]]
                 (let [{dragging-id :entry-id :as dragging} (get-in db [:mymine :drag :dragging])
                       {dropping-id :entry-id :as dropping} (get-in db [:mymine :drag :dragging-over])
-                      hierarchy (get-in db [:mymine :hierarchy])
+                      hierarchy    (get-in db [:mymine :hierarchy])
                       current-mine (get-in db [:current-mine])]
                   (let [noop {:db (assoc-in db [:mymine :drag] nil)}]
 

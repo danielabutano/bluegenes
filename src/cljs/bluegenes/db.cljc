@@ -6,6 +6,7 @@
    ;;events/boot.cljs auto-selects the first mine available if current-mine
    ;;doesn't exist for any reason.
    :current-mine :flymine-beta
+   :toasts {}
    :saved-data {:items {}}
    :quicksearch-selected-index -1 ;;this defaults to select all in the quicksearch
    :databrowser/whitelist #{:Gene :Author :Protein :Organism :Publication :GOAnnotation :GOTerm :Homologue :Interaction :DataSet :genes :authors :proteins :organisms :publications :goAnnotation :goTerms :homologues :dataSets :interactions}
@@ -24,15 +25,15 @@
                       :asc? true}
             :tree {}
             :tree-old {"test-folder" {:file-type :folder
-                                  :open true
-                                  :label "My Project"
-                                  :children {67000011 {:file-type :list
-                                                    :id 67000011}}}
-                   "another-folder" {:file-type :folder
-                                     :open true
-                                     :label "My Stuff"
-                                     :children {63000014 {:file-type :list
-                                                          :id 63000014}}}}
+                                      :open true
+                                      :label "My Project"
+                                      :children {67000011 {:file-type :list
+                                                           :id 67000011}}}
+                       "another-folder" {:file-type :folder
+                                         :open true
+                                         :label "My Stuff"
+                                         :children {63000014 {:file-type :list
+                                                              :id 63000014}}}}
             :list-operations {:selected #{}}}
    :lists {:controls {:filters {:text-filter nil
                                 :flags {:authorized nil

@@ -10,7 +10,7 @@
             [day8.re-frame.async-flow-fx]
             [bluegenes.sections.reportpage.handlers]
             [bluegenes.components.search.events]
-            ;[bluegenes.components.databrowser.events]
+    ;[bluegenes.components.databrowser.events]
             [bluegenes.components.navbar.events]
             [bluegenes.components.enrichment.events]
             [bluegenes.components.search.events :as search-full]
@@ -22,7 +22,8 @@
             [imcljs.path :as im-path]
             [clojure.string :refer [join split]]
             [cljs.core.async :refer [put! chan <! >! timeout close!]]
-            [imcljs.fetch :as fetch]))
+            [imcljs.fetch :as fetch]
+            [oops.core :refer [ocall+ ocall gcall]]))
 
 
 
@@ -42,11 +43,11 @@
   :set-active-panel
   (fn [{db :db} [_ active-panel panel-params evt]]
     (cond-> {:db db}
-            (:fetching-assets? db)                          ; If we're fetching assets then save the panel change for later
-            (assoc :forward-events {:register    :coordinator1
-                                    :events      #{:finished-loading-assets}
+            (:fetching-assets? db) ; If we're fetching assets then save the panel change for later
+            (assoc :forward-events {:register :coordinator1
+                                    :events #{:finished-loading-assets}
                                     :dispatch-to [:do-active-panel active-panel panel-params evt]})
-            (not (:fetching-assets? db))                    ; Otherwise dispatch it now (and the optional attached event)
+            (not (:fetching-assets? db)) ; Otherwise dispatch it now (and the optional attached event)
             (assoc :dispatch-n
                    (cond-> [[:do-active-panel active-panel panel-params evt]]
                            evt (conj evt))))))
@@ -67,9 +68,9 @@
 (reg-event-fx
   :set-active-mine
   (fn [{:keys [db]} [_ value keep-existing?]]
-    {:db                       (cond-> (assoc db :current-mine value)
-                                       (not keep-existing?) (assoc-in [:assets] {}))
-     :dispatch-n               (list [:reboot] [:set-active-panel :home-panel])
+    {:db (cond-> (assoc db :current-mine value)
+                 (not keep-existing?) (assoc-in [:assets] {}))
+     :dispatch-n (list [:reboot] [:set-active-panel :home-panel])
      :visual-navbar-minechange []}))
 
 (reg-event-db
@@ -95,15 +96,32 @@
     (let [connection   (get-in db [:mines (get db :current-mine) :service])
           suggest-chan (fetch/quicksearch connection term {:size 5})]
       (if-let [c (:search-term-channel db)] (close! c))
-      {:db      (-> db
-                    (assoc :search-term-channel suggest-chan)
-                    (assoc :search-term term))
+      {:db (-> db
+               (assoc :search-term-channel suggest-chan)
+               (assoc :search-term term))
        :suggest {:c suggest-chan :search-term term :source (get db :current-mine)}})))
 
 (reg-event-fx
   :add-toast
-  (fn [db [_ message]]
-    (update-in db [:toasts] conj message)))
+  (fn [{db :db} [_ message {:keys [sticky?]}]]
+    (let [id (gensym)
+          _  (when-not sticky? (js/setTimeout (fn [] (dispatch [:remove-toast id])) 3000))]
+      {:db (assoc-in db [:toasts id] {:entry message :timestamp (.getTime (js/Date.))})})))
+
+(reg-event-db
+  :remove-toast
+  (fn [db [_ id]] (update db :toasts dissoc id)))
+
+(reg-event-db
+  :report-size
+  (fn [db [_ id size]]
+    (if (and id size) (assoc-in db [:toasts id :size] size) db)))
+
+(reg-fx :delay
+        (let [delays (atom '())]
+          (fn [{:keys [ms evt]}]
+            (swap! delays conj (js/setTimeout (dispatch evt) ms)))))
+
 
 (reg-event-db
   :test-progress-bar
@@ -120,18 +138,18 @@
   :cache/fetch-organisms
   (fn [{db :db}]
     (let [model          (get-in db [:assets :model])
-          organism-query {:from   "Organism"
+          organism-query {:from "Organism"
                           :select ["name"
                                    "taxonId"
                                    "species"
                                    "shortName"
                                    "genus"
                                    "commonName"]}]
-      {:db           db
-       :im-operation {:op         (partial fetch/rows
-                                           (get-in db [:mines (:current-mine db) :service])
-                                           organism-query
-                                           {:format "jsonobjects"})
+      {:db db
+       :im-operation {:op (partial fetch/rows
+                                   (get-in db [:mines (:current-mine db) :service])
+                                   organism-query
+                                   {:format "jsonobjects"})
                       :on-success [:cache/store-organisms]}})))
 
 (reg-event-db
@@ -156,10 +174,10 @@
           existing-value (get-in db [:mines (get db :current-mine) :possible-values split-path])]
 
       (if (and (nil? existing-value) (not (im-path/class? (get-in mine [:service :model]) path)))
-        {:cache/fetch-possible-values-fx {:service      (get mine :service)
-                                          :query        {:from   (first split-path)
-                                                         :select [path]}
-                                          :mine-kw      (get mine :id)
+        {:cache/fetch-possible-values-fx {:service (get mine :service)
+                                          :query {:from (first split-path)
+                                                  :select [path]}
+                                          :mine-kw (get mine :id)
                                           :summary-path path}}
         {:dispatch [:cache/store-possible-values (get mine :id) path false]}))))
 

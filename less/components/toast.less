@@ -1,24 +1,63 @@
 .toast-item {
 
-    background-color: #00b894;
+    .alert {
+        margin: 0;
+    }
+
+    .toast-item-toolbar {
+        display: flex;
+        visibility: hidden;
+        justify-content: flex-end;
+    }
+
+    &:hover > .toast-item-toolbar {
+        visibility: visible;
+        padding: 0 5px;
+    }
+
+    // background-color: #03a9f4;
+    // border: 1px solid #d3d3d3;
     color: white;
-    border: 1px solid #d3d3d3;
     padding: 5px;
-    border-radius: 6px;
-    min-height: 75px;
+    position: absolute;
+    flex: 1;
+    font-weight: 700;
+    width: 100%;
+    transition: all 100ms ease-in;
+    &:not(:first-child) {
+        opacity: 0.7;
+    }
 
  }
 
  .toast-container {
-     display: none;
-     margin: 10px;
-     min-width: 200px;
-     min-height: 100px;
-     width: 25%;
      position: fixed;
-     top: 0;
+     margin: 10px;
+     min-width: 100px;
+     min-height: 100px;
+     width: 300px;
+     position: fixed;
+     bottom: 0;
      right: 0;
      z-index: 9999;
-     opacity: 0.95;
+}
 
- }
+.customer-enter {
+  opacity: 0.01;
+  transition: 1000ms
+}
+
+.customer-enter.customer-enter-active {
+  opacity: 1;
+  transition: 1000ms;
+}
+
+.customer-exit {
+  opacity: 1;
+  transition: opacity 300ms ease, height 400ms ease 300ms;
+}
+
+.customer-exit.customer-exit-active {
+  opacity: 0.01;
+  height: 0px;
+}

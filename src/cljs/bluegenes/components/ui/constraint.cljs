@@ -183,36 +183,37 @@
                                       on-blur label? possible-values typeahead? hide-code?]}]
                          (let [class? (im-path/class? model path)
                                op     (or op (if class? "LOOKUP" "="))]
-                           [:div.constraint-component
-                            [:div.input-group
-                             [constraint-operator
-                              :model model
-                              :path path
-                              ; Default to an OP if one has not been given
-                              :op op
-                              :lists lists
-                              :on-change (fn [op] ((or on-change-operator on-change) {:code code :path path :value value :op op}))]
-                             (cond
-                               ; If this is a LIST constraint then show a list dropdown
-                               (or (= op "IN")
-                                   (= op "NOT IN")) [list-dropdown
-                                                     :value value
-                                                     :lists lists
-                                                     :restrict-type (im-path/class model path)
-                                                     :on-change (fn [list]
-                                                                  ((or on-select-list on-change) {:path path :value list :code code :op op}))]
-                               ; Otherwise show a text input
-                               :else [constraint-text-input
-                                      :model model
-                                      :value value
-                                      :typeahead? typeahead?
-                                      :path path
-                                      :allow-possible-values (and (not= op "IN") (not= op "NOT IN"))
-                                      :possible-values @pv
-                                      :on-change (fn [val] (on-change {:path path :value val :op op :code code}))
-                                      :on-blur (fn [val] (when on-blur (on-blur {:path path :value val :op op :code code})))])
-                             (when (and code (not hide-code?)) [:span.constraint-label code])]
-                            (when on-remove [:svg.icon.icon-bin
-                                             {:on-click (fn [op] (on-remove {:path path :value value :op op}))}
-                                             [:use {:xlinkHref "#icon-bin"}]
-                                             ])]))})))
+                           [:div
+                            [:div.constraint-component
+                             [:div.input-group
+                              [constraint-operator
+                               :model model
+                               :path path
+                               ; Default to an OP if one has not been given
+                               :op op
+                               :lists lists
+                               :on-change (fn [op] ((or on-change-operator on-change) {:code code :path path :value value :op op}))]
+                              (cond
+                                ; If this is a LIST constraint then show a list dropdown
+                                (or (= op "IN")
+                                    (= op "NOT IN")) [list-dropdown
+                                                      :value value
+                                                      :lists lists
+                                                      :restrict-type (im-path/class model path)
+                                                      :on-change (fn [list]
+                                                                   ((or on-select-list on-change) {:path path :value list :code code :op op}))]
+                                ; Otherwise show a text input
+                                :else [constraint-text-input
+                                       :model model
+                                       :value value
+                                       :typeahead? typeahead?
+                                       :path path
+                                       :allow-possible-values (and (not= op "IN") (not= op "NOT IN"))
+                                       :possible-values @pv
+                                       :on-change (fn [val] (on-change {:path path :value val :op op :code code}))
+                                       :on-blur (fn [val] (when on-blur (on-blur {:path path :value val :op op :code code})))])
+                              (when (and code (not hide-code?)) [:span.constraint-label code])]
+                             (when on-remove [:svg.icon.icon-bin
+                                              {:on-click (fn [op] (on-remove {:path path :value value :op op}))}
+                                              [:use {:xlinkHref "#icon-bin"}]
+                                              ])]]))})))

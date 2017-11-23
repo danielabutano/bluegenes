@@ -69,19 +69,21 @@
            ; Only show editable constraints, but don't filter because we want the index!
            (->> (keep-indexed (fn [idx con] (if (:editable con) [idx con])) (:where @selected-template))
                 (map (fn [[idx con]]
-                       [constraint
-                        :model (:model @service)
-                        :typeahead? false
-                        :path (:path con)
-                        :value (:value con)
-                        :op (:op con)
-                        :code (:code con)
-                        :hide-code? true
-                        :label? true
-                        :lists (second (first @lists))
-                        :on-change (fn [new-constraint]
-                                     (dispatch [:template-chooser/replace-constraint
-                                                idx (merge con new-constraint)]))]))))]))
+                       [:div
+                        [:label {:style {:color "black"}} (s/join " > " (take-last 2 (s/split (im-path/friendly (:model @service) (:path con)) " > ")))]
+                        [constraint
+                         :model (:model @service)
+                         :typeahead? false
+                         :path (:path con)
+                         :value (:value con)
+                         :op (:op con)
+                         :code (:code con)
+                         :hide-code? true
+                         :label? true
+                         :lists (second (first @lists))
+                         :on-change (fn [new-constraint]
+                                      (dispatch [:template-chooser/replace-constraint
+                                                 idx (merge con new-constraint)]))]]))))]))
 
 (defn tags
   "UI element to visually output all aspect tags into each template card for easy scanning / identification of tags.

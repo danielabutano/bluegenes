@@ -17,6 +17,7 @@
             [bluegenes.sections.lists.views :as lists]
             [bluegenes.sections.regions.views :as regions]
             ;[bluegenes.sections.saveddata.views :as saved-data]
+            [bluegenes.components.toast :as toast]
             [bluegenes.sections.help.views :as help]
             [accountant.core :refer [navigate!]]
             [oops.core :refer [ocall oapply oget oset!]]
@@ -81,4 +82,5 @@
        [nav/main]
        [:main [show-panel @active-panel]]
        [footer]
-       [alerts/invalid-token-alert]])))
+       [alerts/invalid-token-alert]
+       [toast/main]])))
