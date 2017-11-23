@@ -64,7 +64,9 @@
                  :identity nil
                  :error? false
                  :message nil)
-     :dispatch [:boot]}))
+     :dispatch-n [[:boot]
+                  [:add-toast
+                   [:div.alert.alert-info "Logged out successfully"]]]}))
 
 
 
