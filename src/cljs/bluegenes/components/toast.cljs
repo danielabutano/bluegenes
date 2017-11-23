@@ -19,12 +19,12 @@
   (let [toasts (subscribe [:toasts])]
     (fn []
       [css-transition-group
-       {:transition-name "customer"
+       {:transition-name "toast-item-transition"
         :component "div"
         :class "toast-container"
         :style {:display "flex"}
-        :transition-enter-timeout 1000
-        :transition-leave-timeout 700}
+        :transition-enter-timeout 0
+        :transition-leave-timeout 300}
        (map-indexed (fn [idx [id :as toast]]
                       (let [offset (+ (apply + (map (comp second :size second) (take idx @toasts))) (* idx 15))]
                         ^{:key id} [toast-item toast offset]

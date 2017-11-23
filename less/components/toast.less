@@ -21,9 +21,10 @@
     padding: 5px;
     position: absolute;
     flex: 1;
+    right: 0;
     font-weight: 700;
     width: 100%;
-    transition: all 100ms ease-in;
+    transition: opacity 100ms ease-out, right 300ms ease-out;
     &:not(:first-child) {
         opacity: 0.7;
     }
@@ -42,22 +43,29 @@
      z-index: 9999;
 }
 
-.customer-enter {
+
+
+.toast-item-transition-enter {
   opacity: 0.01;
-  transition: 1000ms
 }
 
-.customer-enter.customer-enter-active {
+.toast-item-transition-enter.toast-item-transition-enter-active {
   opacity: 1;
-  transition: 1000ms;
 }
 
-.customer-exit {
+.toast-item-transition-leave {
   opacity: 1;
-  transition: opacity 300ms ease, height 400ms ease 300ms;
 }
 
-.customer-exit.customer-exit-active {
+.toast-item-transition-leave.toast-item-transition-leave-active {
   opacity: 0.01;
-  height: 0px;
+  right: -350px;
+}
+
+.toast-item-transition-appear {
+  opacity: 0.01;
+}
+
+.toast-item-transition-appear.toast-item-transition-appear-active {
+  opacity: 1;
 }
