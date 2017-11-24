@@ -180,7 +180,7 @@
                                 (dispatch [:cache/fetch-possible-values path])))
        :reagent-render (fn [& {:keys [lists model path value op code on-change
                                       on-select-list on-change-operator on-remove
-                                      on-blur label? possible-values typeahead? hide-code?]}]
+                                      on-blur label? possible-values typeahead? hide-code?] :as c}]
                          (let [class? (im-path/class? model path)
                                op     (or op (if class? "LOOKUP" "="))]
                            [:div

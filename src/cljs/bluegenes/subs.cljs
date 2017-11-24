@@ -8,7 +8,9 @@
             [bluegenes.sections.querybuilder.subs]
             [bluegenes.components.search.subs]
             [bluegenes.subs.auth]
-            [bluegenes.subs.mymine]))
+            [bluegenes.subs.mymine]
+            [bluegenes.subs.templates]
+            ))
 
 (reg-sub
   :name
@@ -160,6 +162,8 @@
   :<- [:current-mine-name]
   (fn [[all-lists current-mine-name]]
     (get all-lists current-mine-name)))
+
+
 
 
 (reg-sub

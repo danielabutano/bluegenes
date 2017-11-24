@@ -112,7 +112,7 @@
         current-mine (subscribe [:current-mine])
         panel-is     (fn [panel-key] (= @active-panel panel-key))]
     (fn []
-      [:nav.navbar.navbar-default.navbar-fixed-top
+      [:nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
        [:div.container-fluid
         [:ul.nav.navbar-nav.navbar-collapse.navigation
          [:li [:span.navbar-brand {:on-click #(navigate! "/")}

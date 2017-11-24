@@ -1,3 +1,4 @@
+@import "../../resources/public/vendor/bootstrap/less/variables";
 @import "../variables";
 @crazy-padding: 40px;
 
@@ -335,5 +336,54 @@
 @media (max-width:600px) {
     .templates .template-filters .template-filter .control-label {
         margin-top: 1 4px;
+    }
+}
+
+
+.tpl-layout {
+    display: flex;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    top: 50px;
+
+    .label-inverted {
+        background-color: white;
+        color: @brand-primary;
+    }
+
+    .column-templates {
+
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+
+        .filter-container {
+            flex: 0 0;
+            padding: 10px;
+
+            .filter-tag {
+                font-size: 100%;
+                white-space: normal;
+            }
+
+        }
+
+        .template-list-container {
+            // font-size: 0.9em;
+            flex: 1;
+            overflow-y: scroll;
+        }
+    }
+
+    .column-parameters {
+        flex: 1;
+        background-color: white;
+        padding: 20px;
+    }
+
+    .column-results {
+        flex: 1;
     }
 }
