@@ -43,3 +43,29 @@
            [:td
             {:col-span (count (:columnHeaders query-results))}
             (str "+ " (- (:iTotalRecords query-results) 5) " more results")]])]])))
+
+(defn mini-results-table []
+  "Creates a dropdown for a query constraint.
+  :query-results  The intermine model to use"
+  (fn [{:keys [columnHeaders iTotalRecords start modelName views rootClass results] :as query-response}]
+    (if (not-empty query-response)
+      [:div
+       [:table.table.small
+        [:thead
+         (into [:tr]
+               (map (fn [h]
+                      ^{:key h} [table-header h])
+                    columnHeaders))]
+        (cond-> (into [:tbody]
+                      (map (fn [row]
+                             (into [:tr]
+                                   (map (fn [cell]
+                                          [:td.dont-break-out (str (get cell :value "N/A"))])
+                                        row)))
+                           results))
+                (> iTotalRecords 5) (conj
+                                      (into [:tr] (take (count views) (repeat [:td "..."])))
+                                      [:tr
+                                       [:td {:col-span (count views)}
+                                        [:h4 (str "Plus " (- iTotalRecords 5) " more rows")]]]))]]
+      [loader])))

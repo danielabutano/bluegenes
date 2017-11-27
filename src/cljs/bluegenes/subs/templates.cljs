@@ -2,6 +2,29 @@
   (:require [re-frame.core :refer [reg-sub]]
             [clojure.string :as s]))
 
+; Thanks to https://gist.github.com/danielpcox/c70a8aa2c36766200a95
+; Unlike merge, any nil parameter will nullify the merge and return nil
+(defn deep-merge
+  "Deeply merges maps so that nested maps are combined rather than replaced.
+  For example:
+  (deep-merge {:foo {:bar :baz}} {:foo {:fuzz :buzz}})
+  ;;=> {:foo {:bar :baz, :fuzz :buzz}}
+  ;; contrast with clojure.core/merge
+  (merge {:foo {:bar :baz}} {:foo {:fuzz :buzz}})
+  ;;=> {:foo {:fuzz :quzz}} ; note how last value for :foo wins"
+  [& vs]
+  (if (every? map? vs)
+    (apply merge-with deep-merge vs)
+    (last vs)))
+
+(defn deep-merge-with
+  "Deeply merges like `deep-merge`, but uses `f` to produce a value from the
+  conflicting values for a key in multiple maps."
+  [f & vs]
+  (if (every? map? vs)
+    (apply merge-with (partial deep-merge-with f) vs)
+    (apply f vs)))
+
 (defn template-contains-string?
   "Return true if a template's description contains a string"
   [string [_ details]]
@@ -72,8 +95,4 @@
          :<- [::all-templates]
          :<- [::template-edits]
          (fn [[selected-template-kw mine-name all-templates template-edits]]
-           (merge
-             ; Get the default values for the template
-             (get-in all-templates [mine-name selected-template-kw])
-             ; Merge any changes made by the user
-             (get template-edits selected-template-kw))))
+           (get-in template-edits [selected-template-kw])))

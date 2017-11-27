@@ -9,7 +9,7 @@
             [bluegenes.components.lighttable :as lighttable]
             [imcljs.path :as im-path]
             [bluegenes.components.ui.constraint :refer [constraint]]
-            [bluegenes.components.ui.results_preview :refer [preview-table]]
+            [bluegenes.components.ui.results_preview :refer [preview-table mini-results-table]]
             [oops.core :refer [oget]]
             [clojure.string :as s]
             [bluegenes.subs.templates :as subs]
@@ -231,37 +231,43 @@
 
 (defn template-details
   "UI component to allow users to select template details, e.g. select a list to be in, lookup value grater than, less than, etc."
-  [selected-template]
-  (let [selected-template (subscribe [::subs/selected-template-details])
-        model             (subscribe [:current-model])
-        row-count         (subscribe [:template-chooser/count])
-        lists             (subscribe [:lists])
-        template-kw       (keyword (:name @selected-template))]
-    [:div
-     (into [:h2] (replace-arrows (:title @selected-template)))
-     (into [:form.form]
-           ; Only show editable constraints, but don't filter because we want the index!
-           (->> (keep-indexed (fn [idx con] (if (:editable con) [idx con])) (:where @selected-template))
-                (map (fn [[idx con]]
-                       [:div.form-group
-                        [:label {:style {:color "black"}} (s/join " > " (take-last 2 (s/split (im-path/friendly @model (:path con)) " > ")))]
-                        [constraint
-                         :model @model
-                         :typeahead? false
-                         :path (:path con)
-                         :value (:value con)
-                         :op (:op con)
-                         :code (:code con)
-                         :hide-code? true
-                         :label? true
-                         :lists (second (first @lists))
-                         :on-change (fn [new-constraint]
-                                      (dispatch [::evts/update-constraint
-                                                 (keyword (:name @selected-template))
-                                                 idx (merge con new-constraint)]))]]))))
-     [:div.btn-group.pull-right
-      [:button.btn.btn-default {:on-click (fn [] (dispatch [::evts/reset-template template-kw]))} "Reset"]
-      [:button.btn.btn-primary "Run"]]]))
+  []
+  (let [selected-template    (subscribe [::subs/selected-template-details])
+        selected-template-kw (subscribe [::subs/selected-template-kw])
+        model                (subscribe [:current-model])
+        row-count            (subscribe [:template-chooser/count])
+        lists                (subscribe [:lists])
+        current-mine-name    (subscribe [:current-mine-name])]
+    (fn []
+      (let [query (:query @selected-template)]
+        [:div
+         (into [:h2] (replace-arrows (:title query)))
+         (into [:form.form]
+               ; Only show editable constraints, but don't filter because we want the index!
+               (->> (keep-indexed (fn [idx con] (if (:editable con) [idx con])) (:where query))
+                    (map (fn [[idx con]]
+                           [:div.form-group
+                            [:label {:style {:color "black"}} (s/join " > " (take-last 2 (s/split (im-path/friendly @model (:path con)) " > ")))]
+                            [constraint
+                             :model @model
+                             :typeahead? false
+                             :path (:path con)
+                             :value (:value con)
+                             :op (:op con)
+                             :code (:code con)
+                             :hide-code? true
+                             :label? true
+                             :lists (second (first @lists))
+                             :on-change (fn [new-constraint]
+                                          (dispatch [::evts/update-constraint
+                                                     (keyword (:name query))
+                                                     idx (merge con new-constraint)]))]]))))
+         [:div.btn-group.pull-right
+          [:button.btn.btn-default
+           {:on-click (fn [] (dispatch [::evts/reset-template @current-mine-name @selected-template-kw]))}
+           "Reset"]
+          [:button.btn.btn-primary "Run"]]
+         ]))))
 
 
 (defn filter-dashboard []
@@ -280,15 +286,22 @@
          [:button.btn.btn-default
           {:on-click (fn [] (dispatch [::evts/set-filter-text nil]))}
           "Clear"]]]
-       (into [:ul.nav.nav-pills]
-             (map (fn [t]
-                    (let [active? (or (empty? @filter-tags) (contains? @filter-tags t))]
-                      [:li [:span.label.label-default.filter-tag
-                            {:class (when active? "label-info")
-                             :on-click (fn [] (dispatch [::evts/set-filter-tag t]))}
-                            (if active?
-                              [:i.fa.fa-eye.fa-fw]
-                              [:i.fa.fa-eye-slash.fa-fw]) (last (s/split t ":"))]])) @template-tags))])))
+       [:pre (into [:ul.nav.nav-pills]
+                   (map (fn [t]
+                          (let [active? (or (empty? @filter-tags) (contains? @filter-tags t))]
+                            [:li [:span.label.label-default.filter-tag
+                                  {:class (when active? "label-info")
+                                   :on-click (fn [] (dispatch [::evts/set-filter-tag t]))}
+                                  (if active?
+                                    [:i.fa.fa-eye.fa-fw]
+                                    [:i.fa.fa-eye-slash.fa-fw]) (last (s/split t ":"))]])) @template-tags))]])))
+
+(defn preview []
+  (let [selected-template (subscribe [::subs/selected-template-details])]
+    (fn []
+      [:div
+       [:h2 "Query Results Preview"]
+       [mini-results-table (:preview @selected-template)]])))
 
 (defn main []
   (let [im-templates (subscribe [:templates-by-category])
@@ -300,8 +313,8 @@
         [:div.column-templates
          [:div.filter-container [filter-dashboard]]
          [:div.template-list-container [template-list]]]
-        [:div.column-parameters [template-details]]
-        [:div.column-results "results"]
+        [:div.column-parameters [template-details] [preview]]
+        #_[:div.column-results ]
         ]
        #_[:div.row
           [:div.col-xs-12.templates

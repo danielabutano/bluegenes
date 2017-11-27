@@ -1,26 +1,87 @@
 (ns bluegenes.events.templates
-  (:require [re-frame.core :refer [reg-event-db reg-event-fx]]))
+  (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
+            [bluegenes.effects :as fx]
+            [imcljs.fetch :as fetch]))
 
-(reg-event-db ::select-template
-              (fn [db [_ [template-kw details]]]
-                (-> db
-                    (assoc-in [:templates :selected-template] template-kw)
-                    (cond->
-                      (empty? (not-empty (get-in db [:templates :edits template-kw])))
-                      (assoc-in [:templates :edits template-kw] details)))))
+
+; The following is the general data structure of how template events are handled in app-db
+{:templates {
+             ; This is a "cursor" to whatever template is in view
+             :selected-template :MyFavouriteTemplate
+             ;
+             ; This is a map of any edits made to the default values of a template
+             :edits {:SomeTemplateFromIntermine {:query "..."
+                                                 :preview "..."
+                                                 :count "..."
+                                                 :fetching? false}
+                     :MyFavouriteTemplate {
+                                           ; The (potentially edited) query
+                                           :query "..."
+                                           ; The first five results from the query
+                                           :preview "..."
+                                           ; The total row count of the query
+                                           :count "..."
+                                           ; Is the preview currently being fetched?
+                                           :fetching? false}}
+             :filters {
+                       ; A set of tags used for filtering the list of templates
+                       :tags #{"im:aspect:Function" "im:aspect:Homology"}
+                       ; A string used for filtering the list of templates
+                       :text "melanogaster"
+                       }}}
+
+; A user has selected a template. Templates are editable, so
+; we copy its query to a new place in app-db where we can store the changes
+(reg-event-fx ::select-template
+              (fn [{db :db} [_ [template-kw details]]]
+                {:db (-> db
+                         ; Store the "cursor" as seen in the example above
+                         (assoc-in [:templates :selected-template] template-kw)
+                         (cond->
+                           ; If there's no query in the 'editable' map of templates
+                           ; (meaning a user hasn't yet viewed the template)...
+                           (empty? (not-empty (get-in db [:templates :edits template-kw :query])))
+                           ; Then copy over the query
+                           (assoc-in [:templates :edits template-kw :query] details)))
+                 ; Fetch the preview for the template
+                 :dispatch [::fetch-preview template-kw details]}))
+
+(reg-event-fx ::fetch-preview
+              (fn [{db :db} [_ template-kw details]]
+                {:db (update-in db [:templates :edits template-kw]
+                                ; Clear any data from the previous query results
+                                assoc :preview nil :fetching? true)
+                 ; Fetch a preview for the query
+                 :im-chan {:on-success [::store-preview template-kw]
+                           :chan (fetch/table-rows
+                                   {:root "http://beta.flymine.org/beta"
+                                    :model {:name "genomic"}}
+                                   details
+                                   {:size 5})}}))
+
+; Store the results of the preview
+(reg-event-db ::store-preview
+              (fn [db [_ template-kw response]]
+                (update-in db [:templates :edits template-kw] assoc
+                           :preview response
+                           :fetching? false)))
 
 (reg-event-db ::update-constraint
               (fn [db [_ template-kw idx con]]
-                (assoc-in db [:templates :edits template-kw :where idx] con)))
+                (assoc-in db [:templates :edits template-kw :query :where idx] con)))
 
+; Replace the query in the templates edit tree with the original query from the template
 (reg-event-db ::reset-template
-              (fn [db [_ template-kw idx con]]
-                (update-in db [:templates :edits] dissoc template-kw)))
+              (fn [db [_ current-mine template-kw]]
+                (let [original-query (get-in db [:assets :templates current-mine template-kw])]
+                  (assoc-in db [:templates :edits template-kw :query] original-query))))
 
+; Set the string of the text filter
 (reg-event-db ::set-filter-text
               (fn [db [_ text]]
                 (assoc-in db [:templates :filters :text] text)))
 
+; Add or remove tags from the tag filter
 (reg-event-db ::set-filter-tag
               (fn [db [_ tag]]
                 (let [existing (get-in db [:templates :filters :tags] #{})]
