@@ -240,34 +240,36 @@
         current-mine-name    (subscribe [:current-mine-name])]
     (fn []
       (let [query (:query @selected-template)]
-        [:div
-         (into [:h2] (replace-arrows (:title query)))
-         (into [:form.form]
-               ; Only show editable constraints, but don't filter because we want the index!
-               (->> (keep-indexed (fn [idx con] (if (:editable con) [idx con])) (:where query))
-                    (map (fn [[idx con]]
-                           [:div.form-group
-                            [:label {:style {:color "black"}} (s/join " > " (take-last 2 (s/split (im-path/friendly @model (:path con)) " > ")))]
-                            [constraint
-                             :model @model
-                             :typeahead? false
-                             :path (:path con)
-                             :value (:value con)
-                             :op (:op con)
-                             :code (:code con)
-                             :hide-code? true
-                             :label? true
-                             :lists (second (first @lists))
-                             :on-change (fn [new-constraint]
-                                          (dispatch [::evts/update-constraint
-                                                     (keyword (:name query))
-                                                     idx (merge con new-constraint)]))]]))))
-         [:div.btn-group.pull-right
-          [:button.btn.btn-default
-           {:on-click (fn [] (dispatch [::evts/reset-template @current-mine-name @selected-template-kw]))}
-           "Reset"]
-          [:button.btn.btn-primary "Run"]]
-         ]))))
+        [:div.panel.tpl-arrow-box-left
+         [:div.panel-body
+          (into [:h2] (replace-arrows (:title query)))
+          [:p (:description query)]
+          (into [:form.form]
+                ; Only show editable constraints, but don't filter because we want the index!
+                (->> (keep-indexed (fn [idx con] (if (:editable con) [idx con])) (:where query))
+                     (map (fn [[idx con]]
+                            [:div.form-group
+                             [:label {:style {:color "black"}} (s/join " > " (take-last 2 (s/split (im-path/friendly @model (:path con)) " > ")))]
+                             [constraint
+                              :model @model
+                              :typeahead? false
+                              :path (:path con)
+                              :value (:value con)
+                              :op (:op con)
+                              :code (:code con)
+                              :hide-code? true
+                              :label? true
+                              :lists (second (first @lists))
+                              :on-change (fn [new-constraint]
+                                           (dispatch [::evts/update-constraint
+                                                      (keyword (:name query))
+                                                      idx (merge con new-constraint)]))]]))))
+          [:div.btn-group.pull-right
+           [:button.btn.btn-default
+            {:on-click (fn [] (dispatch [::evts/reset-template @current-mine-name @selected-template-kw]))}
+            "Reset"]
+           [:button.btn.btn-primary "Run"]]
+          ]]))))
 
 
 (defn filter-dashboard []
@@ -276,7 +278,8 @@
         filter-tags   (subscribe [::subs/filter-tags])]
     (fn []
       [:div
-       [:div.input-group.input-group-lg
+       [:label "Filter by text"]
+       [:div.input-group.input-group
         [:input.form-control
          {:placeholder "Templates containing text..."
           :value @filter-text
@@ -286,22 +289,25 @@
          [:button.btn.btn-default
           {:on-click (fn [] (dispatch [::evts/set-filter-text nil]))}
           "Clear"]]]
-       [:pre (into [:ul.nav.nav-pills]
-                   (map (fn [t]
-                          (let [active? (or (empty? @filter-tags) (contains? @filter-tags t))]
-                            [:li [:span.label.label-default.filter-tag
-                                  {:class (when active? "label-info")
-                                   :on-click (fn [] (dispatch [::evts/set-filter-tag t]))}
-                                  (if active?
-                                    [:i.fa.fa-eye.fa-fw]
-                                    [:i.fa.fa-eye-slash.fa-fw]) (last (s/split t ":"))]])) @template-tags))]])))
+       [:label "Filter by category"]
+       [:div.input-group
+        (into [:div.tpl-categories]
+              (map (fn [t]
+                     (let [active? (or (empty? @filter-tags) (contains? @filter-tags t))]
+                       [:div.tpl-category
+                        {:class (when active? "active")
+                         :on-click (fn [] (dispatch [::evts/set-filter-tag t]))}
+                        (if active?
+                          [:i.fa.fa-eye.fa-fw]
+                          [:i.fa.fa-eye-slash.fa-fw]) (last (s/split t ":"))])) @template-tags))]])))
 
 (defn preview []
   (let [selected-template (subscribe [::subs/selected-template-details])]
     (fn []
-      [:div
-       [:h2 "Query Results Preview"]
-       [mini-results-table (:preview @selected-template)]])))
+      [:div.panel.tpl-arrow-box-top
+       [:div.panel-body
+        [:h2 "Query Results Preview"]
+        [mini-results-table (:preview @selected-template)]]])))
 
 (defn main []
   (let [im-templates (subscribe [:templates-by-category])
@@ -314,7 +320,7 @@
          [:div.filter-container [filter-dashboard]]
          [:div.template-list-container [template-list]]]
         [:div.column-parameters [template-details] [preview]]
-        #_[:div.column-results ]
+        #_[:div.column-results]
         ]
        #_[:div.row
           [:div.col-xs-12.templates
