@@ -48,16 +48,17 @@
 
 (reg-event-fx ::fetch-preview
               (fn [{db :db} [_ template-kw details]]
-                {:db (update-in db [:templates :edits template-kw]
-                                ; Clear any data from the previous query results
-                                assoc :preview nil :fetching? true)
-                 ; Fetch a preview for the query
-                 :im-chan {:on-success [::store-preview template-kw]
-                           :chan (fetch/table-rows
-                                   {:root "http://beta.flymine.org/beta"
-                                    :model {:name "genomic"}}
-                                   details
-                                   {:size 5})}}))
+                ; TODO: This is too stateful. 'service' should be passed in, not fetched from db.
+                (let [service (get-in db [:mines (:current-mine db) :service])]
+                  {:db (update-in db [:templates :edits template-kw]
+                                  ; Clear any data from the previous query results
+                                  assoc :preview nil :fetching? true)
+                   ; Fetch a preview for the query
+                   :im-chan {:on-success [::store-preview template-kw]
+                             :chan (fetch/table-rows
+                                     service
+                                     details
+                                     {:size 5})}})))
 
 ; Store the results of the preview
 (reg-event-db ::store-preview
@@ -90,3 +91,15 @@
                     (update-in db [:templates :filters :tags] (comp set (partial remove #{tag})))
                     ; Add the tag to the filter set
                     (update-in db [:templates :filters :tags] (comp set conj) tag)))))
+
+; Store the query and hand it off to the results page
+(reg-event-fx ::run
+              (fn [{db :db} [_ query]]
+                {:dispatch-n [[:bluegenes.events/store-query query]
+                              [:results/set-query
+                               ; TODO: This is too stateful. 'mine-name' should be passed in, not fetched from db.
+                               {:source (:current-mine db)
+                                :type :query
+                                :value query}]]
+                 :navigate (str "#/results")}))
+

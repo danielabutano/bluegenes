@@ -11,8 +11,8 @@
   (swap! atom assoc key (oget evt :target :value)))
 
 (defn login-form []
-  (let [credentials       (reagent/atom {:username nil :password nil})
-        current-mine      (subscribe [:current-mine])]
+  (let [credentials  (reagent/atom {:username nil :password nil})
+        current-mine (subscribe [:current-mine])]
     (fn [thinking?]
       [:form.login-form
        [:div.form-group
@@ -112,37 +112,39 @@
         current-mine (subscribe [:current-mine])
         panel-is     (fn [panel-key] (= @active-panel panel-key))]
     (fn []
-      [:nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
+      [:nav.navbar.navbar-fixed-top.navbar-inverse
        [:div.container-fluid
-        [:ul.nav.navbar-nav.navbar-collapse.navigation
-         [:li [:span.navbar-brand {:on-click #(navigate! "/")}
-               [active-mine-logo]
-               [:span.long-name (:name @current-mine)]]]
-         [:li.homelink.larger-screen-only {:class (if (panel-is :home-panel) "active")} [:a {:on-click #(navigate! "/")} "Home"]]
-         [:li {:class (if (panel-is :upload-panel) "active")} [:a {:on-click #(navigate! "/upload")}
-                                                               [:svg.icon.icon-upload.extra-tiny-screen [:use {:xlinkHref "#icon-upload"}]]
-                                                               [:span.larger-screen-only "Upload"]]]
-         [:li {:class (if (panel-is :mymine-panel) "active")}
-          [:a {:on-click #(navigate! "/mymine")}
-           [:svg.icon.icon-cog [:use {:xlinkHref "#icon-user-circle"}]]
-           [:span "My Data"]]]
-
-         [:li {:class (if (panel-is :templates-panel) "active")} [:a {:on-click #(navigate! "/templates")} "Templates"]]
-
-         ;;don't show region search for mines that have no example configured
-         (cond (:regionsearch-example @current-mine)
-               [:li {:class (if (panel-is :regions-panel) "active")} [:a {:on-click #(navigate! "/regions")} "Regions"]]
-               )
-         [:li {:class (if (panel-is :querybuilder-panel) "active")} [:a {:on-click #(navigate! "/querybuilder")} "Query\u00A0Builder"]]
-         #_[:li {:class (if (panel-is :saved-data-panel) "active")} [:a {:on-click #(navigate! "/saved-data")} "Lists" [:span.larger-screen-only "\u00A0(" (apply + (map count (vals @lists))) ")"]]
-            ;;example tooltip. Include as last child, probably with some conditional to display and an event handler for saving the name
-            (if @ttip [save-data-tooltip @ttip])]
-         ]
-        [:ul.nav.navbar-nav.navbar-right.buttons
-         [:li.search [search/main]]
-         (cond (not (panel-is :search-panel)) [:li.search-mini [:a {:on-click #(navigate! "/search")} [:svg.icon.icon-search [:use {:xlinkHref "#icon-search"}]]]])
-         [:li.larger-screen-only [:a {:on-click #(navigate! "/help")} [:svg.icon.icon-question [:use {:xlinkHref "#icon-question"}]]]]
-         ;;This may have worked at some point in the past. We need to res it.
-         [settings]
-         [user]]]
+        [:div.navbar-header
+         [:button.navbar-toggle {:type "button" :data-toggle "collapse" :data-target "#myNavbar"}
+          [:span.icon-bar]
+          [:span.icon-bar]
+          [:span.icon-bar]]
+         [:span.navbar-brand {:on-click #(navigate! "/")}
+          [active-mine-logo]
+          [:span.long-name (:name @current-mine)]]]
+        [:div#myNavbar.collapse.navbar-collapse
+         [:ul.nav.navbar-nav
+          [:li.homelink.larger-screen-only {:class (if (panel-is :home-panel) "active")} [:a {:on-click #(navigate! "/")} "Home"]]
+          [:li {:class (if (panel-is :upload-panel) "active")}
+           [:a {:on-click #(navigate! "/upload")}
+            [:svg.icon.icon-upload.extra-tiny-screen [:use {:xlinkHref "#icon-upload"}]]
+            [:span.larger-screen-only "Upload"]]]
+          [:li {:class (if (panel-is :mymine-panel) "active")}
+           [:a {:on-click #(navigate! "/mymine")}
+            [:svg.icon.icon-cog [:use {:xlinkHref "#icon-user-circle"}]]
+            [:span "My Data"]]]
+          [:li {:class (if (panel-is :templates-panel) "active")}
+           [:a {:on-click #(navigate! "/templates")} "Templates"]]
+          (cond (:regionsearch-example @current-mine)
+                [:li {:class (if (panel-is :regions-panel) "active")}
+                 [:a {:on-click #(navigate! "/regions")} "Regions"]])
+          [:li {:class (if (panel-is :querybuilder-panel) "active")}
+           [:a {:on-click #(navigate! "/querybuilder")} "Query\u00A0Builder"]]]
+         [:ul.nav.navbar-nav.navbar-right.buttons
+          [:li.search [search/main]]
+          (cond (not (panel-is :search-panel)) [:li.search-mini [:a {:on-click #(navigate! "/search")} [:svg.icon.icon-search [:use {:xlinkHref "#icon-search"}]]]])
+          [:li.larger-screen-only [:a {:on-click #(navigate! "/help")} [:svg.icon.icon-question [:use {:xlinkHref "#icon-question"}]]]]
+          ;;This may have worked at some point in the past. We need to res it.
+          [settings]
+          [user]]]]
        [progress-bar/main]])))

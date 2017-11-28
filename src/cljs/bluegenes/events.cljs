@@ -27,7 +27,9 @@
             [oops.core :refer [ocall+ ocall gcall]]))
 
 
-
+(reg-event-db ::store-query
+              (fn [db [_ query]]
+                (update db :my-queries conj query)))
 
 ; Change the main panel to a new view
 (reg-event-fx

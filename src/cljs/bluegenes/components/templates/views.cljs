@@ -216,7 +216,7 @@
         (into [:span.pull-right] (->> tags
                                       parse-aspect-tags
                                       (map (fn [t]
-                                             [:span.label.label-info
+                                             [:span.label.label-default
                                               {:style {:margin-right "5px"}
                                                :class (when active "label-inverted")}
                                               t]))))
@@ -240,7 +240,7 @@
         current-mine-name    (subscribe [:current-mine-name])]
     (fn []
       (let [query (:query @selected-template)]
-        [:div.panel.tpl-arrow-box-left
+        [:div.panel
          [:div.panel-body
           (into [:h2] (replace-arrows (:title query)))
           [:p (:description query)]
@@ -268,7 +268,9 @@
            [:button.btn.btn-default
             {:on-click (fn [] (dispatch [::evts/reset-template @current-mine-name @selected-template-kw]))}
             "Reset"]
-           [:button.btn.btn-primary "Run"]]
+           [:button.btn.btn-primary
+            {:on-click (fn [] (dispatch [::evts/run query]))}
+            "Run"]]
           ]]))))
 
 
