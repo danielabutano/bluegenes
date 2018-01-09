@@ -13,6 +13,12 @@
    :databrowser/node-locations {:Homologue {:x 120 :y 224 :radius 50} :Protein {:x 200 :y 300 :radius 17}}
    :results {:history []}
    :search {:selected-results #{}}
+   :banana {:cakes {:service {:root "beta.flymine.org/beta"}
+                    :query {:from "Gene"
+                            :select ["Gene.symbol"]
+                            :where [{:path "Gene.symbol"
+                                     :op "LIKE"
+                                     :value "M*"}]}}}
    :mymine {:dragging nil
             :dragging-over nil
             :selected #{}
@@ -24,15 +30,15 @@
                       :asc? true}
             :tree {}
             :tree-old {"test-folder" {:file-type :folder
-                                  :open true
-                                  :label "My Project"
-                                  :children {67000011 {:file-type :list
-                                                    :id 67000011}}}
-                   "another-folder" {:file-type :folder
-                                     :open true
-                                     :label "My Stuff"
-                                     :children {63000014 {:file-type :list
-                                                          :id 63000014}}}}
+                                      :open true
+                                      :label "My Project"
+                                      :children {67000011 {:file-type :list
+                                                           :id 67000011}}}
+                       "another-folder" {:file-type :folder
+                                         :open true
+                                         :label "My Stuff"
+                                         :children {63000014 {:file-type :list
+                                                              :id 63000014}}}}
             :list-operations {:selected #{}}}
    :lists {:controls {:filters {:text-filter nil
                                 :flags {:authorized nil
