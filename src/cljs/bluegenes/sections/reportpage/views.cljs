@@ -31,10 +31,10 @@
           [summary/main (:summary @report)]
            (cond (= "Gene" (:type @params))
            [minelinks/main (:id @params)])
-          (js/console.log "COL" @collections)
+
           (into [:div.collections]
                 (map (fn [query]
-                       ;[lighttable/main query {:title true}]
+                       #_[lighttable/main query {:title true}]
                        [:div
                         [:h4 (:class query)]
                         [tables/main {:location [:test (:class query)]
@@ -44,9 +44,9 @@
                                       ;        :where [{:path "Gene.symbol"
                                       ;                 :op "LIKE"
                                       ;                 :value "M*"}]}
-                                      :query (:query query)
+                                      :query (assoc (:query query) :size 5)
                                       }]]
                        ;(js/console.log "BUILDING" [:test] query)
 
-                       )  (take 20 @collections )))
+                       ) @collections))
           (into [:div.templates] (map (fn [[id details]] [table/main details]) @templates))])])))

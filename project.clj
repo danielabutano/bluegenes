@@ -77,7 +77,7 @@
 
                  ; Intermine Assets
                  [intermine/imcljs "0.3.2"]
-                 [intermine/im-tables "0.4.0"]
+                 [org.intermine/im-tables "0.4.0"]
                  [intermine/accountant-fragments "0.1.8"]
 
                  ]
