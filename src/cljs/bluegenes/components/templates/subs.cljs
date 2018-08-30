@@ -59,11 +59,13 @@
   :<- [:template-chooser/text-filter]
   (fn [[templates category text-filter]]
     (let [filter-pred (fn [tag category] (= tag (str "im:aspect:" category)))
-          filter-fn   (fn [[id details]]
-                        (if category
-                          (some? (some (fn [tag] (filter-pred tag category)) (:tags details)))
-                          true))]
-      (filter (partial template-contains-string? text-filter) (filter filter-fn templates)))))
+          filter-fn (fn [[id details]]
+                      (if category
+                        (some? (some (fn [tag] (filter-pred tag category)) (:tags details)))
+                        true))]
+          (sort-by :name (filter (partial template-contains-string? text-filter) (filter filter-fn templates)))
+      ))
+  )
 
 (reg-sub
   :selected-template-name
