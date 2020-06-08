@@ -45,22 +45,45 @@
          (fn [db]
            (get-in db [:idresolver :stage :options :upload-tab])))
 
-
-
 (reg-sub ::view
          (fn [db]
            (get-in db [:idresolver :stage :view])))
 
-(reg-sub ::stats
-         :<- [::resolution-response]
-         (fn [resolution-response]
-           (let [{{{:keys [matches issues notFound all]} :identifiers :as s} :stats} resolution-response
-                 {{:keys [OTHER WILDCARD DUPLICATE TYPE_CONVERTED MATCH]} :matches} resolution-response]
-             {:matches matches
-              :issues issues
-              :notFound notFound
-              :all all
-              :duplicates (count DUPLICATE)
-              :converted (count TYPE_CONVERTED)
-              :other (count OTHER)
-              })))
+(reg-sub ::parsing?
+         (fn [db]
+           (= (get-in db [:idresolver :stage :status :action]) :parsing)))
+
+(reg-sub ::parsed?
+         (fn [db]
+           (boolean (get-in db [:idresolver :stage :flags :parsed]))))
+
+(reg-sub
+ ::in-progress?
+ :<- [::parsing?]
+ :<- [::parsed?]
+ (fn [[parsing? parsed?]]
+   (or parsing? parsed?)))
+
+(reg-sub
+ ::stats
+ :<- [::resolution-response]
+ (fn [resolution-response]
+   (let [{{{:keys [matches issues notFound all]} :identifiers :as s} :stats}
+         resolution-response
+         {{:keys [OTHER WILDCARD DUPLICATE TYPE_CONVERTED MATCH]} :matches}
+         resolution-response]
+     {:matches matches
+      :issues issues
+      :notFound notFound
+      :all all
+      :duplicates (count DUPLICATE)
+      :converted (count TYPE_CONVERTED)
+      :other (count OTHER)})))
+
+;;if the example doesn't exist, we don't want to show the "example"
+;; button to users. 
+(reg-sub
+ ::example?
+ (fn [db]
+   (let [current-mine (get db :current-mine)]
+     (some? (get-in db [:mines current-mine :idresolver-example])))))

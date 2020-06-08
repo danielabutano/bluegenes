@@ -1,42 +1,43 @@
 (ns bluegenes.components.ui.alerts
-  (:require [re-frame.core :refer [subscribe dispatch dispatch-sync]]
+  (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as r]))
 
-(defn invalid-token-alert []
-  (let [invalid-tokens? (subscribe [:invalid-tokens?])]
-    (fn []
-      (if @invalid-tokens?
-        [:div.alert-container
-         [:div.alert.alert-danger
-          [:h3 "Debug: Your token has expired"]
-          [:p "It's likely that a remote InterMine server restarted and lost your anonymous token. Please refresh your browser to obtain a new one."]
-          [:button.btn.btn-default.btn-raised.pull-right
-           {:on-click (fn [] (dispatch-sync [:boot]))} "Refresh"]
-          [:div.clearfix]]]
-        [:span]))))
+(defn tool-operation-alert []
+  (let [working? @(subscribe [:bluegenes.pages.developer.subs/tool-working?])]
+    (when working?
+      [:div.alert-container
+       [:div.alert.alert-info
+        [:span "A tool operation is in progress..."]]])))
 
+(defn invalid-token-alert []
+  (let [invalid-token? (subscribe [:invalid-token?])]
+    (if @invalid-token?
+      [:div.alert-container
+       [:div.alert.alert-danger
+        [:h3 "Debug: Your token has expired"]
+        [:p "It's likely that a remote InterMine server restarted and lost your anonymous token. Please refresh your browser to obtain a new one."]
+        [:button.btn.btn-default.btn-raised.pull-right
+         {:on-click #(dispatch [:clear-invalid-token])}
+         "Refresh"]
+        [:div.clearfix]]]
+      [:span])))
 
 (defn message
   "A message component that dismisses itself after 5 seconds
   Messages should be in the following format:
-  {:markup [:div [:span somemarkup]]
-   :style success (or any bootstrap color name)
-   }"
-  []
-  (r/create-class
-    {:component-did-mount (fn [this]
-                            (let [{:keys [id]} (r/props this)]
-                              (js/setTimeout
-                                  (fn []
-                                    (dispatch [:messages/remove id])) 5000)))
-     :reagent-render (fn [{:keys [markup style when id]}]
-                       [:div.alert.message
-                        {:class (str "alert-" (or style "info"))}
-                        [:span.markup markup]
-                        [:span.controls
-                         [:button.btn.btn-default.btn-xs.btn-raised
-                          {:on-click (fn [] (dispatch [:messages/remove id]))
-                           :style {:margin 0}} "X"]]])}))
+      {:markup [:span \"Your text\"]] ; Or any other markup.
+       ;; :markup can also be a function which takes `id` and returns hiccup.
+       :style \"success\" ; Or any bootstrap color name.
+       :timeout 0 ; Optional to override default auto-dismissal of 5 seconds.
+       }"
+  [{:keys [markup style id]}]
+  [:div.alert.message
+   {:class (str "alert-" (or style "info"))}
+   [:span.markup (cond-> markup (fn? markup) (apply [id]))]
+   [:span.controls
+    [:button.btn.btn-default.btn-xs.btn-raised
+     {:on-click (fn [] (dispatch [:messages/remove id]))
+      :style {:margin 0}} "X"]]])
 
 (defn messages
   "Creates a message bar on the bottom of the screen"
@@ -45,4 +46,14 @@
     (fn []
       [:div.messages-wrapper
        (into [:div.messages-container]
-             (map (fn [m] [message m]) @messages))])))
+             (for [{:keys [id] :as m} @messages]
+               ^{:key id}
+               [message m]))])))
+
+(defn main
+  []
+  [:<> ; This hieroglyph is read as "React Fragment".
+   ;; It lets you return multiple elements without wrapping them in a container element.
+   [tool-operation-alert]
+   [invalid-token-alert]
+   [messages]])

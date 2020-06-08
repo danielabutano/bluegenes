@@ -250,6 +250,12 @@
 
         .bottom {
             flex: 1 0;
+
+            .description-text {
+                font-style: italic;
+                font-size: 11px;
+                padding-left: 55px;
+            }
         }
 
         .tag-type {
@@ -438,6 +444,18 @@
         .file-browser {
             order: 2;
             width: 100%;
+        }
+    }
+
+    .folder-row {
+        & > svg.icon {
+            margin-left: @spacer/5;
+            font-size: 1.3em;
+        }
+
+        a.expand-folder > svg.icon {
+            margin-left: 0;
+            font-size: 1.2em;
         }
     }
 }

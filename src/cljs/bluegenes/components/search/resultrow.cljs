@@ -1,50 +1,44 @@
 (ns bluegenes.components.search.resultrow
   (:require [re-frame.core :as re-frame :refer [subscribe dispatch]]
-            [accountant.core :refer [navigate!]]
-            [reagent.core :as reagent]
-            [oops.core :refer [ocall oget oget+]]))
+            [oops.core :refer [ocall oget]]
+            [bluegenes.route :as route]))
 
-(defn is-selected? [result selected-result]
-  "returns true if 'result' is selected"
-  (= selected-result result))
-
-(defn result-selection-control [result]
+(defn result-selection-control
   "UI control suggesting to the user that there is only one result selectable at any one time; there's no actual form functionality here."
-  (let [selected? (subscribe [:search/am-i-selected? result])]
+  [result]
+  (let [selected? @(subscribe [:search/am-i-selected? result])]
     [:input {:type "checkbox"
-             :on-click (fn [e] (ocall e :stopPropagation)
-                         (if @selected?
-                           (dispatch [:search/deselect-result result])
-                           (dispatch [:search/select-result result])))
-             :name "keyword-search"}
-     ]))
+             :on-change (fn [e]
+                          (if (oget e :target :checked)
+                            (dispatch [:search/select-result result])
+                            (dispatch [:search/deselect-result result])))
+             ;; on-change is the React idiomatic way to handle interaction, but
+             ;; for some reason calling stopPropagation in there doesn't work!
+             :on-click #(ocall % :stopPropagation)
+             :checked selected?
+             :name "keyword-search"}]))
 
-(defn set-selected! [row-data elem]
-  "selects an item and navigates there. "
-  (let [current-mine (subscribe [:current-mine])]
-    (navigate! (str "/reportpage/" (name (:id @current-mine)) "/" (:type (:result row-data)) "/" (:id (:result row-data))))))
-
-(defn row-structure [row-data contents]
+(defn row-structure
   "This method abstracts away most of the common components for all the result-row baby methods."
-  (fn [row-data contents]
-    (let [result        (:result row-data)
-          active-filter (subscribe [:search/active-filter])
-          selected?     (subscribe [:search/am-i-selected? (:id result)])]
-      ;;Todo: Add a conditional row highlight on selected rows.
-      [:div.result {:on-click
-                    (fn [this]
-                      (set-selected! row-data (oget this "target")))
-                    :class (if @selected? "selected")}
-       (cond (some? @active-filter)
-             [result-selection-control result])
-       [:span.result-type {:class (str "type-" (:type result))} (:type result)]
-       (contents)])))
+  [row-data contents]
+  (let [{:keys [id type] :as result} (:result row-data)
+        category-filter? (subscribe [:search/category-filter?])
+        selected?        (subscribe [:search/am-i-selected? id])]
+    ;;Todo: Add a conditional row highlight on selected rows.
+    [:div.result
+     {:on-click #(dispatch [::route/navigate ::route/report {:type type :id id}])
+      :class (if @selected? "selected")}
+     (when @category-filter?
+       [result-selection-control result])
+     [:span.result-type {:class (str "type-" type)} type]
+     (contents)]))
 
-(defn wrap-term [broken-string term]
+(defn wrap-term
   "Joins an array of terms which have already been broken on [term] adding a highlight class as we go.
   So given the search term 'bob' and the string 'I love bob the builder', we'll return something like
   '[:span I love [:span.searchterm 'bob'] the builder]'.
   TODO: If we know ways to refactor this, let's do so. It's verrry slow."
+  [broken-string term]
   [:span
    ;; iterate over the string arrays, and wrap span.searchterm around the terms.
    ;; don't do it for the last string, otherwise we end up with random extra
@@ -54,14 +48,15 @@
           [:span string [:span.searchterm term]]) (butlast broken-string))
    (cond ;;special case: if both strings are empty, the entire string was the term in question
      (and ;;so we need to wrap it in searchterm and return the term
-       (clojure.string/blank? (last broken-string))
-       (clojure.string/blank? (first broken-string)))
+      (clojure.string/blank? (last broken-string))
+      (clojure.string/blank? (first broken-string)))
      [:span.searchterm term])
    ;;finally, we need to output the last term, without appending anything to it.
    [:span (last broken-string)]])
 
-(defn show [row-data selector]
+(defn show
   "Helper: fetch a result from the data model, adding a highlight if the setting is enabled."
+  [row-data selector]
   (let [row        (:fields (:result row-data))
         string     (get row (keyword selector))
         term       (:search-term row-data)
@@ -75,8 +70,9 @@
       [:span string])))
 
 (defmulti result-row
-          "Result-row outputs nicely formatted type-specific results for common types and has a default that just outputs all non id, type, and relevance fields."
-          (fn [row-data] (:type (:result row-data))))
+  "Result-row outputs nicely formatted type-specific results for common types
+  and has a default that just outputs all non id, type, and relevance fields."
+  (fn [row-data] (:type (:result row-data))))
 
 (defmethod result-row "Gene" [row-data]
   [row-structure row-data
@@ -118,18 +114,19 @@
      [:div.details
       (show row-data "name")])])
 
+;; format a row in a readable way when no other templates apply.
+;; Adds 'name: description' default first rows if present.
 (defmethod result-row :default [row-data]
-  "format a row in a readable way when no other templates apply. Adds 'name: description' default first rows if present."
   (let [details (:fields (:result row-data))]
     [row-structure row-data
      (fn []
        [:div.details
-        (if (contains? details "name")
+        (when (contains? details :name)
           [:span.name (show row-data "name")])
-        (if (contains? details "description")
+        (when (contains? details :description)
           [:span.description (show row-data "description")])
-
-        (doall (reduce (fn [my-list [k value]]
-                         (if (and (not= k "name") (not= k "description"))
-                           (conj my-list [:li [:h6.default-description k] [:div.default-value value]]))) [:ul] details))
-        ])]))
+        (into [:ul]
+              (comp (filter (comp (complement #{:name :description}) key))
+                    (map (fn [[k v]]
+                           [:li [:h6.default-description k] [:div.default-value v]])))
+              details)])]))

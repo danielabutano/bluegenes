@@ -1,43 +1,136 @@
 (ns bluegenes.effects
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
-  (:require [re-frame.core :refer [dispatch subscribe reg-fx]]
-            [accountant.core :as accountant]
-            [cljs.core.async :refer [<! close!]]
-            [cljs-http.client :as http]))
+  (:require [re-frame.core :as rf :refer [dispatch reg-fx reg-cofx]]
+            [cljs.core.async :refer [<! close! put!]]
+            [cljs-http.client :as http]
+            [cognitect.transit :as t]
+            [bluegenes.titles :refer [db->title]]
+            [oops.core :refer [ocall]]))
+
+;; Cofx and fx which you use from event handlers to read/write to localStorage.
+
+(reg-cofx
+ :local-store
+ (fn [coeffects key]
+   (let [key (str key)
+         value (t/read (t/reader :json) (.getItem js/localStorage key))]
+     (assoc coeffects :local-store value))))
+
+(reg-fx
+ :persist
+ (fn [[key value]]
+   (let [key (str key)]
+     (if (some? value)
+       (.setItem js/localStorage key (t/write (t/writer :json-verbose) value))
+       ;; Specifying `nil` as value removes the key instead.
+       (.removeItem js/localStorage key)))))
+
+;; Examples (we do not endorse storing your cats in localStorage)
+
+(comment
+  (reg-event-fx
+   :read-cats
+   [(inject-cofx :local-store :my-cats)]
+   (fn [{db :db, my-cats :local-store} [_]]
+     {:db (update db :cat-park into my-cats)})))
+
+(comment
+  (reg-event-fx
+   :write-cats
+   (fn [_ [_ my-cats]]
+     {:persist [:my-cats my-cats]})))
+
+;; Interceptor and effect to set the title of the web page.
+
+(def document-title
+  "Interceptor that updates the document title based on db."
+  (rf/->interceptor
+   :id :document-title
+   :after (fn [context]
+            (let [db (get-in context [:effects :db])
+                  title (db->title db)]
+              (assoc-in context [:effects :document-title] title)))))
+
+(reg-fx
+ :document-title
+ (fn [title]
+   (set! (.-title js/document) title)))
+
+(comment
+  "To update the document title, add the interceptor to any event that may
+  update the db and warrant a change in the title. Make sure to place it
+  innermost if there are multiple interceptors (ie. `[foo document-title]`)."
+  (reg-event-fx
+   :my-event
+   [document-title]
+   (fn [] ...)))
 
 ;; See bottom of namespace for effect registrations and examples  on how to use them
 
-; Handles the I/O of the quicksearch results used for autosuggesting
-; values in the main search box
-; TODO: This can easily be retired by using the :im-chan effect below
-(reg-fx
-  :suggest
-  (fn [{:keys [c search-term source]}]
-    (if (= "" search-term)
-      (dispatch [:handle-suggestions nil])
-      (go (dispatch [:handle-suggestions (<! c)])))))
-
-; Navigates the browser to the given url and adds an entry to the HTML5 History
-(reg-fx :navigate (fn [url] (accountant/navigate! url)))
-
-"The :im-chan side effect is used to read a value from a channel that represents an HTTP request
-and dispatches events depending on the status of that request's response."
+;; The :im-chan side effect is used to read a value from a channel that
+;; represents an HTTP request and dispatches events depending on the status of
+;; that request's response.
 (reg-fx :im-chan
-        (let [previous-requests (atom {})]
-          (fn [{:keys [on-success on-failure chan abort]}]
-            ; This http request can be closed early to prevent asynchronous http race conditions
+        (let [previous-requests (atom {})
+              active-requests (atom #{})]
+          (fn [{:keys [on-success on-failure chan abort abort-active]}]
+            ;; `abort` should be used when you have a request which may be sent
+            ;; multiple times, and you want new requests to replace pending
+            ;; requests of the same `abort` value.
             (when abort
               ; Look for a request stored in the state keyed by whatever value is in 'abort'
               ; and close it
               (some-> @previous-requests (get abort) close!)
               ; Swap the old value for the new value
               (swap! previous-requests assoc abort chan))
-            (go
-              (let [{:keys [statusCode] :as response} (<! chan)]
-                (if (and statusCode (= statusCode 401))
-                  (dispatch [:flag-invalid-tokens])
-                  (dispatch (conj on-success response))))))))
 
+            ;; `abort-active` is different from `abort` in that instead of being
+            ;; used with a request, it's more something you call to cancel all
+            ;; active requests, without invoking their `on-failure` function.
+            (when abort-active
+              (doseq [req @active-requests]
+                ;; Create an artificial HTTP response to indicate that this
+                ;; request has been aborted.
+                (put! req {:status 408
+                           :success false
+                           :body :abort})
+                (close! req)))
+
+            (when chan
+              (swap! active-requests conj chan)
+              (go
+                (let [{:keys [statusCode status] :as response} (<! chan)
+                      ;; `statusCode` is part of the response body from InterMine.
+                      ;; `status` is part of the response map created by cljs-http.
+                      s (or statusCode status)
+                      ;; Response can be nil or "" when offline.
+                      valid-response? (and (some? response)
+                                           (not= response ""))]
+                  (swap! active-requests disj chan)
+                  ;; Note that `s` can be nil for successful responses, due to
+                  ;; imcljs applying a transducer on success. The proper way to
+                  ;; check for null responses (which don't have a status code)
+                  ;; is to check if the response itself is nil.
+                  (cond
+                    ;; This first clause will intentionally match on s=nil.
+                    (and valid-response?
+                         (< s 400)) (dispatch (conj on-success response))
+                    (and valid-response?
+                         (= s 401)) (if on-failure
+                                      (dispatch (conj on-failure response))
+                                      (dispatch [:flag-invalid-token]))
+                    :else (cond
+                            ;; Don't invoke `on-failure` if request was aborted.
+                            (and (= s 408) (= (:body response) :abort)) nil
+
+                            on-failure (dispatch (conj on-failure response))
+
+                            ;; If `abort` is specified, it's possible that this request's
+                            ;; channel was closed by a subsequent request. In this case,
+                            ;; there's no error and we don't want to log it.
+                            (and abort (nil? response)) nil
+                            :else
+                            (.error js/console "Failed imcljs request" response)))))))))
 
 (defn http-fxfn
   "The :http side effect is similar to :im-chan but is more generic and is used
@@ -64,25 +157,25 @@ and dispatches events depending on the status of that request's response."
                   :put http/put
                   http/get)]
     (let [c (http-fn uri (cond-> {}
-                                 json-params (assoc :json-params json-params)
-                                 transit-params (assoc :transit-params transit-params)
-                                 form-params (assoc :form-params form-params)
-                                 multipart-params (assoc :multipart-params multipart-params)
-                                 headers (update :headers #(merge % headers))
-                                 (and token @token) (update :headers assoc "X-Auth-Token" @token)
-                                 progress (assoc :progress progress)))]
+                           json-params (assoc :json-params json-params)
+                           transit-params (assoc :transit-params transit-params)
+                           form-params (assoc :form-params form-params)
+                           multipart-params (assoc :multipart-params multipart-params)
+                           headers (update :headers #(merge % headers))
+                           (and token @token) (update :headers assoc "X-Auth-Token" @token)
+                           progress (assoc :progress progress)))]
       (go (let [{:keys [status body] :as response} (<! c)]
             (cond
               (<= 200 status 399) (when on-success (dispatch (conj on-success body)))
               (<= 400 status 499) (when on-unauthorised (dispatch (conj on-unauthorised response)))
-              (>= 500 status 599) (when on-error (dispatch (conj on-error response)))
+              (<= 500 status 599) (when on-error (dispatch (conj on-error response)))
               :else nil)))
       (when on-progress-upload
         (go-loop []
-                 (let [report (<! progress)]
-                   (when (= :upload (:direction report))
-                     (dispatch (conj on-progress-upload report))))
-                 (recur))))))
+          (let [report (<! progress)]
+            (when (= :upload (:direction report))
+              (dispatch (conj on-progress-upload report))))
+          (recur))))))
 
 ;;; Register the effects
 (reg-fx ::http http-fxfn)
@@ -107,3 +200,36 @@ and dispatches events depending on the status of that request's response."
                    {:chan (imcljs.fetch/rows service query options)
                     :on-success [:save-query-results-event]
                     :on-error [:warn-user-about-error-event]}})))
+
+;; Switching mines is usually so quick that we don't need a loader.
+;; But if it were to take a long time, we'll show a loader.
+(reg-fx
+ :mine-loader
+ (let [timer (atom nil)
+       showing? (atom false)
+       clear-timer! (fn []
+                      (when-let [active-timer @timer]
+                        (.clearTimeout js/window active-timer))
+                      (when @showing?
+                        (dispatch [:hide-mine-loader])
+                        (reset! showing? false)))]
+   (fn [state]
+     (case state
+       true (do (clear-timer!)
+                (reset! timer
+                        (.setTimeout js/window
+                                     #(do (dispatch [:show-mine-loader])
+                                          (reset! showing? true))
+                                     4000)))
+       false (clear-timer!)))))
+
+(reg-fx
+ :hide-intro-loader
+ (fn [_]
+   (some-> (ocall js/document :getElementById "wrappy")
+           (ocall :remove))))
+
+(reg-fx :message
+        (fn [{:keys [id timeout] :or {timeout 5000}}]
+          (when (pos? timeout)
+            (.setTimeout js/window #(dispatch [:messages/remove id]) timeout))))

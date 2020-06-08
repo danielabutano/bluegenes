@@ -26,6 +26,7 @@
             background-color: @selected-color;
             .box-shadow;
             margin-top: 0;
+            position: relative;
         }
         @media(max-width:@tiny-screen) {
             flex-wrap: wrap;
@@ -34,6 +35,10 @@
                 margin: @spacer/2 0;
             }
         }
+        .example-button{
+            margin: 0px;
+            width: 100%;
+          }
     }
 
     .region {

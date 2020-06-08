@@ -2,17 +2,19 @@
   (:require [re-frame.core :refer [reg-sub]]))
 
 (reg-sub
-  ::auth
-  (fn [db]
-    (get-in db [:auth])))
+ ::auth
+ :<- [:current-mine]
+ (fn [current-mine]
+   (:auth current-mine)))
 
 (reg-sub
-  ::identity
-  (fn [db]
-    (get-in db [:auth :identity])))
+ ::identity
+ :<- [::auth]
+ (fn [auth]
+   (:identity auth)))
 
 (reg-sub
-  ::authenticated?
-  :<- [::identity]
-  (fn [identity]
-    (some? (not-empty identity))))
+ ::authenticated?
+ :<- [::identity]
+ (fn [identity]
+   (some? (not-empty identity))))

@@ -1,107 +1,111 @@
-(def props {:version "0.9.4-SNAPSHOT"})
-
-(defproject org.intermine/bluegenes (:version props)
+(defproject org.intermine/bluegenes "0.9.12"
+  :licence "LGPL-2.1-only"
+  :description "Bluegenes is a Clojure-powered user interface for InterMine, the biological data warehouse"
+  :url "http://www.intermine.org"
   :dependencies [; Clojure
-                 [org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.10.145"]
-                 [org.clojure/core.async "0.3.443"]
+                 [org.clojure/clojure "1.10.1"]
+                 [org.clojure/clojurescript "1.10.520"]
+                 [org.clojure/core.async "1.0.567"]
 
                  ; MVC
-                 [re-frame "0.10.2"]
-                 [day8.re-frame/http-fx "0.1.4"]
-                 [day8.re-frame/async-flow-fx "0.0.8"]
-                 [day8.re-frame/forward-events-fx "0.0.5"]
-                 [day8.re-frame/undo "0.3.2"]
-                 [reagent "0.7.0" :exclusions [cljsjs/react]]
-                 [cljsjs/react-with-addons "15.6.1-0"]
+                 [re-frame "0.12.0"]
+                 [day8.re-frame/http-fx "0.1.6"]
+                 [day8.re-frame/async-flow-fx "0.1.0"]
+                 [day8.re-frame/forward-events-fx "0.0.6"]
+                 [day8.re-frame/undo "0.3.3"]
+                 [reagent "0.10.0"]
+                 [cljsjs/react-transition-group "1.2.0-0"
+                  :exclusions [cljsjs/react cljsjs/react-dom]]
                  [hiccup "1.0.5"]
                  [prismatic/dommy "1.1.0"]
-                 [secretary "1.2.3"]
+                 [metosin/reitit "0.4.2"]
                  [servant "0.1.5"]
-                 [json-html "0.4.4"]
-
-                 [figwheel-sidecar "0.5.14"]
+                 [json-html "0.4.7"]
+                 [markdown-to-hiccup "0.6.2"]
+                 [cljsjs/react-day-picker "7.3.0-1"]
+                 [cljsjs/react-select "2.4.4-0"]
 
                  ; HTTP
-                 [clj-http "3.7.0"]
-                 [cljs-http "0.1.44"]
-                 [compojure "1.6.0"]
-                 [ring "1.6.3"]
-                 [ring/ring-defaults "0.3.1"]
-                 [ring/ring-json "0.4.0" :exclusions [cheshire.core]]
-                 [cheshire "5.8.0"]
-                 [metosin/ring-http-response "0.9.0"]
-                 [ring-middleware-format "0.7.2"]
-
-                 ; Dev tools
-                 [re-frisk "0.5.0"]
+                 [clj-http "3.10.0"]
+                 [cljs-http "0.1.46"]
+                 [compojure "1.6.1"]
+                 [ring "1.8.0"]
+                 [ring/ring-defaults "0.3.2"]
+                 [ring/ring-json "0.5.0" :exclusions [cheshire.core]]
+                 [cheshire "5.10.0"]
+                 [metosin/ring-http-response "0.9.1"]
+                 [ring-middleware-format "0.7.4"]
 
                  ; Build tools
-                 [yogthos/config "0.9"]
+                 [yogthos/config "1.1.7"]
 
                  ; Utility libraries
-                 [com.cognitect/transit-cljs "0.8.243"]
+                 [com.cognitect/transit-cljs "0.8.256"]
                  [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
-                 [com.andrewmcveigh/cljs-time "0.5.1"]
-                 [com.taoensso/carmine "2.16.0"]
-                 [inflections "0.13.0"]
-                 [fipp "0.6.10"]
-                 [binaryage/oops "0.5.6"]
-                 [inflections "0.13.0"]
-                 [cljsjs/google-analytics "2015.04.13-0"]
-
-                 ; Database
-                 [org.clojure/java.jdbc "0.7.3"]
-                 [org.postgresql/postgresql "42.1.4"]
-                 [hikari-cp "1.8.1"]
-                 [migratus "1.0.0"]
-                 [com.layerware/hugsql "0.4.8"]
-                 [postgre-types "0.0.4"]
-
-                 ; Components
-                 [mount "0.1.11"]
+                 [com.andrewmcveigh/cljs-time "0.5.2"]
+                 [com.taoensso/carmine "2.19.1"]
+                 [inflections "0.13.2"]
+                 [fipp "0.6.22"]
+                 [binaryage/oops "0.7.0"]
+                 [inflections "0.13.2"]
+                 [cljsjs/google-analytics "2017.09.21-0"]
+                 [day8.re-frame/test "0.1.5"]
+                 [cljs-bean "1.5.0"]
+                 [org.clojure/data.xml "0.2.0-alpha6"]
 
                  ; Logging
                  [com.taoensso/timbre "4.10.0"]
-                 [com.fzakaria/slf4j-timbre "0.3.7"]
+                 [com.fzakaria/slf4j-timbre "0.3.19"]
 
                  ; Security
-                 [buddy/buddy-auth "2.1.0"]
-                 [buddy/buddy-sign "2.2.0"]
-                 [buddy/buddy-hashers "1.3.0"]
+                 [buddy/buddy-auth "2.2.0"]
+                 [buddy/buddy-sign "3.1.0"]
+                 [buddy/buddy-hashers "1.4.0"]
 
                  [com.cemerick/friend "0.2.3"]
                  [clojusc/friend-oauth2 "0.2.0"]
-                 [com.cemerick/url "0.1.1"]
+                 [lambdaisland/uri "1.2.1"]
 
 
                  ; Intermine Assets
-                 [org.intermine/im-tables "0.8.1"]
-                 [org.intermine/imcljs "0.5.1"]
-                 [intermine/accountant-fragments "0.1.8"]]
+                 [org.intermine/im-tables "0.9.0"]
+                 [org.intermine/imcljs "1.1.0"]
+                 [org.intermine/bluegenes-tool-store "0.2.0"]]
 
   :deploy-repositories {"clojars" {:sign-releases false}}
-
+  :codox {:language :clojurescript}
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-less "1.7.5"]
-            [lein-ancient "0.6.14"]
-            [lein-pdo "0.1.1"]]
+            [org.clojure/core.unify "0.5.7"]
+            [lein-codox "0.10.5"]
+            [lein-ancient "0.6.15"]
+            [lein-pdo "0.1.1"]
+            [lein-cljfmt "0.6.1"]]
+
+  :cljfmt {:indents {wait-for [[:inner 0]]}}
 
   :aliases {"dev" ["do" "clean"
-                   ["pdo" ["figwheel" "dev"]
-                    ["less" "auto"]
-                    ["run"]]]
+                   ["pdo"
+                    ["trampoline" "less" "auto"]
+                    ["with-profile" "+repl" "run"]]]
             "build" ["do" "clean"
-                     ["cljsbuild" "once" "min"]
-                     ["less" "once"]]
-            "prod" ["do" "build" ["pdo" ["run"]]]}
+                     ["less" "once"]
+                     ["with-profile" "prod" "cljsbuild" "once" "min"]]
+            "prod" ["do" "build"
+                    ["with-profile" "prod" "run"]]
+            "deploy" ["with-profile" "+uberjar" "deploy" "clojars"]
+            "format" ["cljfmt" "fix"]
+            "kaocha" ["with-profile" "kaocha" "run" "-m" "kaocha.runner"]
+            "tools" ["run" "-m" "bluegenes-tool-store.tools"]}
 
   :min-lein-version "2.8.1"
 
   :source-paths ["src/clj" "src/cljs" "src/cljc" "src/workers" "script/"]
 
+  :test-paths ["test/cljs"]
+
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"
-                                    "resources/public/css"
+                                    "out" "resources/public/css"
                                     "test/js"]
 
   :figwheel {:css-dirs ["resources/public/css"]
@@ -111,16 +115,26 @@
   :less {:source-paths ["less"]
          :target-path "resources/public/css"}
 
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]]
-                   :resource-paths ["config/dev"]
-                   :plugins [[lein-figwheel "0.5.14"]
+  :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]
+                 :init (-main)
+                 :timeout 120000}
+
+  :profiles {:dev {:dependencies [[binaryage/devtools "1.0.0"]
+                                  [day8.re-frame/re-frame-10x "0.6.0"]
+                                  [day8.re-frame/tracing "0.5.3"]
+                                  [figwheel-sidecar "0.5.19"]
+                                  [cider/piggieback "0.4.2"]]
+                   :resource-paths ["config/dev" "tools" "config/defaults"]
+                   :plugins [[lein-figwheel "0.5.19"]
                              [lein-doo "0.1.8"]]}
-             :prod {:dependencies []
-                    :resource-paths ["config/prod"]
-                    :plugins []}
-             :uberjar {:resource-paths ["config/prod"]
-                       :prep-tasks ["clean" ["less" "once"] ["cljsbuild" "once" "min"] "compile"]
-                       :aot :all}}
+             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-601"]
+                                     [lambdaisland/kaocha-cljs "0.0-71"]]}
+             :repl {:source-paths ["dev"]}
+             :prod {:resource-paths ["config/prod" "tools" "config/defaults"]}
+             :uberjar {:resource-paths ["config/prod" "config/defaults"]
+                       :prep-tasks ["build" "compile"]
+                       :aot :all}
+             :java9 {:jvm-opts ["--add-modules" "java.xml.bind"]}}
 
   :cljsbuild {:builds {:dev {:source-paths ["src/cljs"]
                              :figwheel {:on-jsload "bluegenes.core/mount-root"}
@@ -128,34 +142,25 @@
                                         :optimizations :none
                                         :output-to "resources/public/js/compiled/app.js"
                                         :output-dir "resources/public/js/compiled"
-                                        :asset-path "js/compiled"
+                                        :asset-path "/js/compiled"
                                         :source-map-timestamp true
                                         :pretty-print true
-                                        :npm-deps {:highlight.js "9.12.0"}
-                                        :install-deps true
                                         ;:parallel-build true
+                                        :closure-defines {"re_frame.trace.trace_enabled_QMARK_" true
+                                                          "day8.re_frame.tracing.trace_enabled_QMARK_"  true}
                                         :preloads [devtools.preload
-                                                   re-frisk.preload]
-                                        :external-config {:devtools/config {:features-to-install :all}}
-                                        }}
+                                                   day8.re-frame-10x.preload]
+                                        :external-config {:devtools/config {:features-to-install :all}}}}
+
 
                        :min {:source-paths ["src/cljs"]
                              :jar true
                              :compiler {:main bluegenes.core
                                         :output-to "resources/public/js/compiled/app.js"
-                                        ;:output-dir "resources/public/js/compiled"
+                                        :fingerprint true
                                         :optimizations :advanced
-                                        :npm-deps {:highlight.js "9.12.0"}
-                                        :install-deps true
                                         :closure-defines {goog.DEBUG false}
-                                        :pretty-print false}}
-
-                       :test {:source-paths ["src/cljs" "test/cljs"]
-                              :compiler {:output-to "resources/public/js/test/test.js"
-                                         :output-dir "resources/public/js/test"
-                                         :main bluegenes.runner
-                                         :optimizations :none}}}}
-
+                                        :pretty-print false}}}}
 
   :main bluegenes.core
 
@@ -163,8 +168,13 @@
 
   :repositories [
                  ["clojars"
-                  {:url "https://clojars.org/repo"
+                  {:url "https://clojars.org/repo"}]]
                    ;; How often should this repository be checked for
                    ;; snapshot updates? (:daily, :always, or :never)
                    ;:update :always
-                   }]])
+
+  :release-tasks [["change" "version" "leiningen.release/bump-version"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag" "--no-sign"]
+                  ["vcs" "push"]])

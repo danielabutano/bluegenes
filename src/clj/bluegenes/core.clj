@@ -2,11 +2,8 @@
   (:require [bluegenes.handler :refer [handler]]
             [config.core :refer [env]]
             [ring.adapter.jetty :refer [run-jetty]]
-            [taoensso.timbre :as timbre :refer [infof errorf]]
-            [mount.core :as mount]
-    ; Including this namespace establishes the database connection when (mount/start) is called:
-            [bluegenes.mounts :as mounts]
-            [bluegenes.migrations :as migrations])
+            [taoensso.timbre :as timbre :refer [infof]]
+            [bluegenes-tool-store.tools :refer [initialise-tools]])
   (:gen-class))
 
 (defn ->int
@@ -17,18 +14,23 @@
     (int? n) n
     :else n))
 
+(defonce web-server_ (atom nil))
+(defn stop-web-server! [] (when-let [stop-fn @web-server_] (stop-fn)))
+(defn start-web-server!
+  "Parses the port from the configuration file, environment variables, or default to 5000
+  (\"PORT\" is often the default value for app serving platforms such as Heroku and Dokku)
+  and start the Jetty server by passing in the URL routes defined in `handler`."
+  []
+  (stop-web-server!)
+  (let [port    (->int (or (:server-port env) (:port env) 5000))
+        server  (run-jetty handler {:port port :join? false})
+        stop-fn #(.stop server)]
+    (infof "=== Bluegenes server started on port: %s" port)
+    (reset! web-server_ stop-fn)))
+
 (defn -main
   "Start the BlueGenes server. This is the main entry point for the application"
-  [& args]
-  ; Parse the port from the configuration file, environment variables, or default to 5000
-  ; "PORT" is often the default value for app serving platforms such as Heroku and Dokku
-  (let [port (->int (or (:server-port env) (:port env) 5000))]
-    (timbre/set-level! :info) ; Enable Logging
-    #_(try
-      (do
-        (mount/start) ; Mount our database connection
-        (migrations/migrate)) ; Apply any database migrations that haven't been applied
-      (catch Exception e (errorf "Unable to connect to database: %s" (.getMessage e))))
-    ; Start the Jetty server by passing in the URL routes defined in 'handler'
-    (run-jetty handler {:port port :join? false})
-    (infof "Bluegenes server started on port: %s" port)))
+  [& _args]
+  (timbre/set-level! :info) ; Enable Logging
+  (initialise-tools)
+  (start-web-server!))

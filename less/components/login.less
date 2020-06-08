@@ -20,10 +20,11 @@
     }
 
     .error-box {
+        margin-top: @spacer;
         animation: login-error-fadein 1s;
     }
 
-    .icon {
+    .logo.icon {
         fill: @highlight-color-text;
         width: 2*@spacer;
         height: 2*@spacer;
@@ -35,22 +36,23 @@
         color: @body-foreground-color;
     }
 
-    .forceregistrationscreen {
-        display:none;
-    }
-
     .register-or-login {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-    }
 
-    .register {
-        margin-right: 1em;
-        display: flex;
+        .mine-logo {
+            width: @spacer*2;
+            max-height: @spacer*2;
+            margin-right: @spacer/2;
+        }
 
-        a {
-            padding: 1em;
+        .other-action {
+            margin-right: @spacer;
+        }
+
+        button {
+            margin-top: 0;
         }
     }
 }

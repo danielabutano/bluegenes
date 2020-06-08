@@ -1,4 +1,4 @@
-@import "../../resources/public/vendor/bootstrap/less/bootstrap";
+@import "../../node_modules/bootstrap/less/bootstrap";
 @import "../variables";
 @import "../datatype-colors";
 
@@ -190,6 +190,10 @@
         .results {
             order: 2;
             margin: @spacer/2 @spacer/2 @spacer/2 @spacer;
+
+            .empty-results {
+              margin-top: @spacer/2;
+            }
 
             .result-type {
                 background: rgba(235,235,235,0.87);
@@ -391,6 +395,13 @@
     min-width: 40vw;
 }
 
+.search .dropdown {
+  display:flex;
+  input {flex-grow:1;
+  background-color:#fff;
+  color: @body-foreground-color;
+}
+}
 .quicksearch {
     margin: 0;
     padding: 0;

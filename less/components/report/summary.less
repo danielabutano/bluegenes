@@ -10,7 +10,7 @@
         .table {
             margin-bottom: 0;
         }
-        overflow-x: auto;
+        overflow: visible;
     }
 
 
@@ -55,6 +55,41 @@
                 }
             }
         }
+
+        .fasta-value {
+            display: flex;
+
+            .fasta-button {
+                font-size: 0.8em;
+                margin-left: @spacer;
+                border: black 1px solid;
+                padding: @spacer/10;
+                background-image: linear-gradient(#e6e6e6, white);
+            }
+
+            .fasta-dropdown {
+                padding: 0;
+            }
+
+            .fasta-sequence {
+                overflow: auto;
+                width: 400px;
+                height: 200px;
+                resize: both;
+                margin: 0;
+            }
+
+            .hidden-download {
+              display: none;
+            }
+
+            .fasta-download {
+                display: flex;
+                align-items: center;
+                margin-left: @spacer/2;
+                font-size: 0.8em;
+            }
+        }
     }
 
     .collections {
@@ -69,6 +104,38 @@
 
     .no-results {
         order: 1000;
+    }
+
+    .top-scroll {
+        position:fixed;
+        right:10px;
+        bottom:10px;
+        cursor:pointer;
+        width:50px;
+        height:50px;
+        background-color:#3498db;
+        -webkit-border-radius:60px;
+        -moz-border-radius:60px;
+        border-radius:60px;
+        z-index: 99;
+        
+        .top-arrow {
+            position:absolute;
+            top:50%;
+            left:50%;
+            margin-left:-8px;
+            margin-top:-12px;
+            height:0;
+            width:0;
+            border:8px solid transparent;
+            border-bottom-color:#ffffff;
+        }
+    }
+
+    .top-scroll:hover {
+        background-color:#e74c3c;
+        opacity:1;filter:"alpha(opacity=100)";
+        -ms-filter:"alpha(opacity=100)";
     }
 }
 

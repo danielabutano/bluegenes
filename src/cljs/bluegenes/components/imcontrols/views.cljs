@@ -3,8 +3,6 @@
             [reagent.core :as reagent]
             [oops.core :refer [oget]]))
 
-
-
 "Creates a dropdown of known organisms. The supplied :on-change function will
 receive all attributes of the organism selected.
 Options {}:
@@ -21,7 +19,7 @@ Example usage:
   (let [organisms (subscribe [:cache/organisms])]
     (fn [{:keys [selected-value on-change]}]
       [:div.btn-group.organism-dropdown
-       [:button.btn.btn-primary.dropdown-toggle
+       [:button.btn.dropdown-toggle
         {:data-toggle "dropdown"}
         [:span (if selected-value (str selected-value " ") "All Organisms ") [:span.caret]]]
        (-> [:ul.dropdown-menu]
@@ -38,17 +36,18 @@ Example usage:
   (let [organisms        (subscribe [:cache/organisms])
         default-organism (subscribe [:mine-default-organism])]
     (fn [{:keys [value on-change disabled class]}]
-      [:div.form-group
+      [:div.form-group.organism-selector
        (into [:select.form-control
               {:value (if disabled "" (or value @default-organism ""))
                :disabled disabled
                :class class
-               :on-change (fn [e] (on-change (oget e :target :value)))}]
+               :on-change (fn [e]
+                            (on-change (oget e :target :value)))}]
              (concat
-               [[:option {:value ""} "Any"]
-                [:option {:value "_"} ""]]
-               (map (fn [{short-name :shortName}]
-                      [:option {:value short-name} short-name]) @organisms)))])))
+              [[:option {:value ""} "Any"]
+               [:option {:value "_" :disabled true} "---"]]
+              (map (fn [{short-name :shortName}]
+                     [:option {:value short-name} short-name]) @organisms)))])))
 
 (defn sort-classes [classes]
   (sort-by (comp :displayName second) < classes))
@@ -57,25 +56,30 @@ Example usage:
   (let [model        (subscribe [:current-model])
         current-mine (subscribe [:current-mine])]
     (fn [{:keys [value on-change qualified?]}]
-      ; when qualified? is true, only show intermine object types that have class keys
+      ; when qualified? is true, only show intermine object types
+      ; that have class keys
       (let [{default-types :default-object-types
              class-keys :class-keys} @current-mine]
         [:div.form-group
-         (into [:select.form-control
-                {:value (or value (-> default-types first name))
-                 :on-change (fn [e] (on-change (oget e :target :value)))}]
-               (concat
-                 (map (fn [[class-kw {:keys [name displayName]}]]
-                        [:option {:value name} displayName])
-                      (sort-classes (select-keys (:classes @model) default-types)))
-                 (concat [[:option {:value "_"} ""]])
-                 (map (fn [[class-kw {:keys [name displayName]}]]
-                        [:option {:value name} displayName])
-                      (sort-classes
-                        (apply dissoc
-                               (cond-> (:classes @model)
-                                       qualified? (select-keys (keys class-keys))) default-types)))))]))))
-
+         [:select.form-control
+          {:value (or value (-> default-types first name))
+           :on-change (fn [e] (on-change (oget e :target :value)))}
+          (into
+           [:optgroup {:label "Popular"}]
+           (map
+            (fn [[class-kw {:keys [name displayName]}]]
+              [:option {:value name} displayName])
+            (sort-classes (select-keys (:classes @model) default-types))))
+          (into
+           [:optgroup {:label "All classes"}]
+           (map
+            (fn [[class-kw {:keys [name displayName]}]]
+              [:option {:value name} displayName])
+            (sort-classes
+             (apply dissoc
+                    (cond-> (:classes @model)
+                      qualified? (select-keys (keys class-keys)))
+                    default-types))))]]))))
 
 (defn object-type-dropdown []
   (let [display-names @(subscribe [:model])]
@@ -83,7 +87,10 @@ Example usage:
       [:div.btn-group.object-type-dropdown
        [:button.btn.btn-primary.dropdown-toggle
         {:data-toggle "dropdown"}
-        [:span (if selected-value (str (get-in display-names [selected-value :displayName]) " ") "Select a type") [:span.caret]]]
+        [:span (if selected-value
+                 (str (get-in display-names [selected-value :displayName])
+                      " ") "Select a type")
+         [:span.caret]]]
        (-> [:ul.dropdown-menu]
            (into (map (fn [value]
                         [:li [:a
